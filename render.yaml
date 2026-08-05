@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: maison-aria
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    buildCommand: npm install
+    startCommand: node server.js
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.1
+      - key: NODE_ENV
+        value: production
+    disk:
+      name: maison-aria-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1

@@ -1,0 +1,124 @@
+================================================================
+  MAISON ARIA — 라이브 배포 완전 가이드 (5분 컷)
+================================================================
+
+목표: 이 앱을 진짜 인터넷 주소(https://…)로 접속 가능하게 만들기.
+
+가장 쉬운 순서: [ Render.com ] 을 추천.
+
+----------------------------------------------------------------
+STEP 1)  GitHub 계정으로 코드 저장소 만들기
+----------------------------------------------------------------
+
+  1-1. https://github.com 접속 → 로그인
+  1-2. 우측 상단 [+] → New repository
+  1-3. Repository name: maison-aria
+       (Public 또는 Private 아무거나 OK)
+  1-4. Create repository
+
+----------------------------------------------------------------
+STEP 2)  이 폴더를 GitHub에 업로드
+----------------------------------------------------------------
+
+  방법 A) GitHub Desktop 앱 사용 (초보 추천)
+    - https://desktop.github.com 설치
+    - File → Add local repository → 이 폴더 지정
+    - Publish repository 클릭
+    - 완료
+
+  방법 B) 명령어 사용
+    cd 이_폴더_경로
+    git init
+    git add .
+    git commit -m "init maison aria"
+    git branch -M main
+    git remote add origin https://github.com/본인아이디/maison-aria.git
+    git push -u origin main
+
+----------------------------------------------------------------
+STEP 3)  Render.com에서 배포
+----------------------------------------------------------------
+
+  3-1. https://render.com 접속
+  3-2. Sign in with GitHub (GitHub 계정으로 로그인)
+  3-3. 왼쪽 상단  New +  →  Blueprint  클릭
+  3-4. Connect a repository → maison-aria 선택
+  3-5. Render가 자동으로 render.yaml 을 읽음
+       - Service name:  maison-aria
+       - Region:        Singapore (또는 원하는 곳)
+       - Plan:          Free
+  3-6.  Apply  버튼 클릭
+  3-7. 배포 진행 (약 2~5분)
+
+  배포 완료 화면에 다음과 같은 URL이 발급됨:
+      https://maison-aria-xxxx.onrender.com
+
+  이게 진짜 라이브 URL 이야. 어디서든 접속 가능.
+
+----------------------------------------------------------------
+STEP 4)  라이브 사이트 접속 & 로그인
+----------------------------------------------------------------
+
+  발급된 URL을 브라우저에 입력.
+
+  홈페이지 (Maison Aria 랜딩)이 뜨면 성공.
+  하단 SIGN IN 또는 VIP LOUNGE 로 이동해 로그인:
+
+      관리자:  admin   / admin1234
+      직원:    staff   / staff1234
+
+  로그인 후 상담 · 상품DB · 파이프라인 · 상담이력 · 대시보드 사용 가능.
+
+----------------------------------------------------------------
+STEP 5)  나만의 도메인 연결 (선택)
+----------------------------------------------------------------
+
+  Render 대시보드 → maison-aria 서비스 → Settings
+  → Custom Domains → Add Custom Domain
+  → 원하는 도메인 (예: maisonaria.com) 입력
+  → 안내되는 DNS CNAME 을 도메인 등록업체에 설정
+  → 몇 분 뒤 SSL 자동 발급됨
+
+================================================================
+  대안: 더 쉬운 배포 방법들
+================================================================
+
+■ Railway.app  (GitHub 연결 없이 CLI로 원샷)
+    npm install -g @railway/cli
+    railway login
+    railway init
+    railway up
+    → 라이브 URL 발급
+
+■ Fly.io  (전세계 리전, 무료 티어 있음)
+    curl -L https://fly.io/install.sh | sh
+    fly launch
+    fly deploy
+
+■ Vercel  (정적 홈페이지만 필요할 때)
+    npm install -g vercel
+    vercel
+    → 정적 파일만 배포되므로 로그인/상담 로직은 안 됨.
+      (풀 앱 배포는 Render/Railway/Fly 사용)
+
+================================================================
+  문제 해결
+================================================================
+
+Q. 배포는 됐는데 사이트가 잠깐 뒤에 잠들었어요.
+A. Render Free Plan 은 15분 유휴 시 슬립. 첫 요청 시 30초 대기.
+   Hobby($7/mo) 로 업그레이드하면 항상 켜져 있음.
+
+Q. 배포 시 build 실패 로그가 떠요.
+A. Render 대시보드 → Logs 확인. 대부분 Node 버전 문제.
+   package.json 의 engines.node 를 "18.x" 또는 "20.x" 로 명시 (이미 되어있음).
+
+Q. DB가 재배포마다 초기화돼요.
+A. render.yaml 에 disk 마운트가 이미 설정되어 있어 유지됨.
+   Free Plan에서는 disk가 제한될 수 있으므로 필요 시 Hobby 업그레이드.
+
+Q. 사진이 안 떠요.
+A. /public/assets/ 안 이미지가 함께 커밋됐는지 확인.
+   git status 로 이미지 트래킹 여부 체크.
+
+================================================================
