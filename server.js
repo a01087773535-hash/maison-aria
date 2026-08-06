@@ -6,19 +6,49 @@ const xlsx = require('xlsx');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-// v3: CommonJS 호환 안전 로더
-// nanoid 3.x = CJS, 4.x+ = ESM 이라 Render에서 ERR_REQUIRE_ESM 발생 가능 → 자체 폴백 구현
-let nanoid;
-try {
-  nanoid = require('nanoid').nanoid;
-} catch (e) {
-  nanoid = function (size = 21) {
-    return require('crypto').randomBytes(size).toString('base64url').slice(0, size);
-  };
-}
+// v4: ESM 의존성 완전 제거 — 자체 구현 로더
+// nanoid 자체 폴백 (npm nanoid 설치 안해도 동작)
+const nanoid = function (size = 21) {
+  return require('crypto').randomBytes(Math.ceil(size * 3 / 4))
+    .toString('base64')
+    .replace(/\+/g, 'A').replace(/\//g, 'B').replace(/=/g, '')
+    .slice(0, size);
+};
 
-// lowdb 3.x = CJS 지원, 사용법 통일
-const { Low, JSONFile } = require('lowdb');
+// 자체 구현 lowdb 호환 어댑터 (ESM 이슈 제로)
+class JSONFile {
+  constructor(filename) { this.filename = filename; }
+  read() {
+    try {
+      if (!fs.existsSync(this.filename)) return null;
+      const raw = fs.readFileSync(this.filename, 'utf-8');
+      if (!raw.trim()) return null;
+      return JSON.parse(raw);
+    } catch (e) {
+      console.error('[JSONFile.read] error:', e.message);
+      return null;
+    }
+  }
+  write(data) {
+    const dir = path.dirname(this.filename);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(this.filename, JSON.stringify(data, null, 2), 'utf-8');
+  }
+}
+class Low {
+  constructor(adapter, defaultData) {
+    this.adapter = adapter;
+    this.data = defaultData || {};
+  }
+  async read() {
+    const d = this.adapter.read();
+    if (d !== null && d !== undefined) this.data = d;
+    return this.data;
+  }
+  async write() {
+    this.adapter.write(this.data);
+  }
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,7 +58,7 @@ if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 const upload = multer({ dest: uploadDir });
 
 const adapter = new JSONFile(DB_FILE);
-const db = new Low(adapter);
+const db = new Low(adapter, {});
 db.data = db.data || {};
 
 const recommendationRules = {
