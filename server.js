@@ -6,9 +6,19 @@ const xlsx = require('xlsx');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
-const { nanoid } = require('nanoid');
-const { Low } = require('lowdb');
-const { JSONFile } = require('lowdb/node');
+// v3: CommonJS 호환 안전 로더
+// nanoid 3.x = CJS, 4.x+ = ESM 이라 Render에서 ERR_REQUIRE_ESM 발생 가능 → 자체 폴백 구현
+let nanoid;
+try {
+  nanoid = require('nanoid').nanoid;
+} catch (e) {
+  nanoid = function (size = 21) {
+    return require('crypto').randomBytes(size).toString('base64url').slice(0, size);
+  };
+}
+
+// lowdb 3.x = CJS 지원, 사용법 통일
+const { Low, JSONFile } = require('lowdb');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,7 +28,8 @@ if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 const upload = multer({ dest: uploadDir });
 
 const adapter = new JSONFile(DB_FILE);
-const db = new Low(adapter, {});
+const db = new Low(adapter);
+db.data = db.data || {};
 
 const recommendationRules = {
   hydration: [['글리세린', 8], ['판테놀', 12], ['세라마이드', 14], ['히알루론산', 12], ['스쿠알란', 10], ['베타인', 7]],
